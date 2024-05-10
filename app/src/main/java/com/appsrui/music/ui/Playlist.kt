@@ -17,6 +17,7 @@ import com.appsrui.music.ui.theme.MusicTheme
 fun Playlist(
     modifier: Modifier = Modifier,
     playlist: List<Song> = emptyList(),
+    nowPlaying: String? = null,
     onSongClick: (Song) -> Unit = {},
 ) {
     LazyColumn(
@@ -27,6 +28,7 @@ fun Playlist(
             SongListItem(
                 modifier = Modifier.clickable { onSongClick(song) },
                 song = song,
+                isPlaying = song.id.toString() == nowPlaying
             )
         }
     }

@@ -29,6 +29,7 @@ fun PlayerScreen(playerScreenState: PlayerScreenState, modifier: Modifier = Modi
         currentProgress = playerScreenState.currentPosition,
         bufferedProgress = playerScreenState.bufferedPosition,
         nowPlaying = playerScreenState.currentSong,
+        playlist = playerScreenState.playlist,
         error = playerScreenState.error,
         onPlayPause = playerScreenState.onPlayPause,
         onSkipPrevious = playerScreenState.onSkipPrevious,
@@ -73,6 +74,7 @@ private fun PlayerScreen(
         Playlist(
             playlist = playlist,
             onSongClick = onSongClick,
+            nowPlaying = nowPlaying?.id.toString(),
             modifier = Modifier.constrainAs(playlistRef) {
                 height = Dimension.fillToConstraints
                 start.linkTo(parent.start)

@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -14,11 +15,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModelProvider
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import com.appsrui.music.ui.PlayerScreen
 import com.appsrui.music.ui.theme.MusicTheme
 
 class MainActivity : ComponentActivity() {
-    private val model by viewModels<PlayerScreenViewModel>()
+    private val model by viewModels<PlayerScreenViewModel>{
+        ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+    }
+
+    private val player by lazy {  ExoPlayer.Builder(application).build() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,9 +42,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun onStart() {
         super.onStart()
-        model.onStart()
+        model.onStart(player)
     }
 
     override fun onStop() {

@@ -37,13 +37,14 @@ import com.appsrui.music.ui.theme.MusicTheme
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun SongListItem(modifier: Modifier = Modifier, song: Song) {
+fun SongListItem(modifier: Modifier = Modifier, song: Song, isPlaying: Boolean = false) {
     SongListItem(
         modifier = modifier,
         image = song.thumb,
         title = song.title,
         subtitle = song.artist,
         duration = song.durationSeconds,
+        isPlaying = isPlaying,
     )
 }
 
@@ -54,7 +55,12 @@ private fun SongListItem(
     title: String,
     subtitle: String,
     duration: Int,
+    isPlaying: Boolean,
 ) {
+    val color = if (isPlaying)
+        MaterialTheme.colorScheme.primary
+    else
+        MaterialTheme.colorScheme.onBackground
     ConstraintLayout(
         modifier = modifier
             .fillMaxWidth()
@@ -92,7 +98,7 @@ private fun SongListItem(
                 fontWeight = FontWeight.Bold,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = color,
                 modifier = Modifier.fillMaxWidth()
             )
             Row(
@@ -102,14 +108,14 @@ private fun SongListItem(
                     painter = painterResource(id = R.drawable.icon_person),
                     contentDescription = "",
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = color,
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = subtitle,
                     fontSize = 12.sp,
                     maxLines = 1,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = color,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -118,7 +124,7 @@ private fun SongListItem(
         Text(
             text = "${TimeUnit.SECONDS.toMinutes(duration.toLong())}:${"%02d".format(duration % 60)}",
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = color,
             modifier = Modifier
                 .wrapContentWidth()
                 .constrainAs(durationText) {
@@ -137,5 +143,13 @@ private fun SongListItem(
 fun SongListItemPreview() {
     MusicTheme {
         SongListItem(song = SongList[0])
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SongListItemPreviewPlaying() {
+    MusicTheme {
+        SongListItem(song = SongList[0], isPlaying = true)
     }
 }
