@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.media3.common.Player.REPEAT_MODE_OFF
 import com.appsrui.music.PlayerScreenState
 import com.appsrui.music.R
 import com.appsrui.music.model.Song
@@ -35,7 +36,11 @@ fun PlayerScreen(playerScreenState: PlayerScreenState, modifier: Modifier = Modi
         onSkipPrevious = playerScreenState.onSkipPrevious,
         onSkipNext = playerScreenState.onSkipNext,
         onSeek = playerScreenState.onSeek,
-        onSongClick = playerScreenState.onSongClick
+        onSongClick = playerScreenState.onSongClick,
+        repeatMode = playerScreenState.repeatMode,
+        isShuffleModeActive = playerScreenState.isShuffleModeActive,
+        onChangeShuffleMode = playerScreenState.onChangeShuffleMode,
+        onChangeRepeatMode = playerScreenState.onChangeRepeatMode,
     )
 }
 
@@ -54,6 +59,10 @@ private fun PlayerScreen(
     onSkipNext: () -> Unit = {},
     onSeek: (seconds: Float) -> Unit = {},
     onSongClick: (Song) -> Unit = {},
+    repeatMode: Int = REPEAT_MODE_OFF,
+    isShuffleModeActive: Boolean = false,
+    onChangeRepeatMode: () -> Unit = {},
+    onChangeShuffleMode: () -> Unit = {},
 ) {
     ConstraintLayout(modifier = modifier.fillMaxSize()) {
         val (header, playlistRef, controls) = createRefs()
@@ -89,11 +98,15 @@ private fun PlayerScreen(
             isBuffering = isBuffering,
             currentProgress = currentProgress,
             bufferedProgress = bufferedProgress,
+            shuffleMode = isShuffleModeActive,
+            repeatMode = repeatMode,
             error = error,
             onPlayPause = onPlayPause,
             onSkipPrevious = onSkipPrevious,
             onSkipNext = onSkipNext,
             onSeek = onSeek,
+            onChangeShuffleMode = onChangeShuffleMode,
+            onChangeRepeatMode = onChangeRepeatMode,
             modifier = Modifier.constrainAs(controls) {
                 start.linkTo(parent.start)
                 end.linkTo(parent.end)
@@ -112,6 +125,7 @@ fun DefaultPreview() {
             nowPlaying = SongList[0],
             isPlaying = true,
             isBuffering = true,
+            repeatMode = 1,
             currentProgress = 50_000L,
             bufferedProgress = 50_000L,
             error = Exception()

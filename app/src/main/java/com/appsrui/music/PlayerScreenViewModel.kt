@@ -11,6 +11,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Player.REPEAT_MODE_ALL
+import androidx.media3.common.Player.REPEAT_MODE_OFF
+import androidx.media3.common.Player.REPEAT_MODE_ONE
 import com.appsrui.music.model.SongList
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,6 +117,22 @@ class PlayerScreenViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
 
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                updatePlayerScreenState {
+                    copy(
+                        repeatMode = repeatMode
+                    )
+                }
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                updatePlayerScreenState {
+                    copy(
+                    isShuffleModeActive = shuffleModeEnabled
+                    )
+                }
+            }
+
         })
 
         setInitialPlayerScreenState(player)
@@ -163,16 +182,26 @@ class PlayerScreenViewModel(app: Application) : AndroidViewModel(app) {
                     if (player.duration != C.TIME_UNSET) {
                         player.seekTo(TimeUnit.SECONDS.toMillis(seconds.toLong()))
                     }
+                },
+                onChangeRepeatMode = {
+                    player.repeatMode = when (player.repeatMode) {
+                        REPEAT_MODE_OFF -> REPEAT_MODE_ALL
+                        REPEAT_MODE_ALL -> REPEAT_MODE_ONE
+                        else -> REPEAT_MODE_OFF
+                    }
+                },
+                onChangeShuffleMode = {
+                    player.shuffleModeEnabled = !player.shuffleModeEnabled
                 }
             )
         }
     }
 
 
-    private fun setupProgressUpdateJob(player: Player){
+    private fun setupProgressUpdateJob(player: Player) {
         progressUpdateJob?.cancel()
         progressUpdateJob = viewModelScope.launch {
-            while (true){
+            while (true) {
                 updatePlayerScreenState {
                     copy(
                         currentPosition = player.currentPosition,

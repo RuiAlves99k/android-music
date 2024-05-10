@@ -1,5 +1,9 @@
 package com.appsrui.music
 
+import androidx.media3.common.Player.REPEAT_MODE_OFF
+import androidx.media3.common.Player.RepeatMode
+import androidx.media3.exoplayer.source.ShuffleOrder
+import androidx.media3.exoplayer.source.ShuffleOrder.UnshuffledShuffleOrder
 import com.appsrui.music.model.Song
 import java.lang.Exception
 
@@ -15,5 +19,9 @@ data class PlayerScreenState(
     val onSkipNext: () -> Unit = {},
     val onSeek: (Float) -> Unit = {},
     val onSongClick: (Song) -> Unit = {},
+    val repeatMode: Int = REPEAT_MODE_OFF,
+    val onChangeRepeatMode: () -> Unit = {},
+    val isShuffleModeActive: Boolean = false,
+    val onChangeShuffleMode: () -> Unit = {},
     val error: Exception? = null,
 )

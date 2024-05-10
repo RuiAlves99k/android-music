@@ -38,6 +38,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player.REPEAT_MODE_ALL
+import androidx.media3.common.Player.REPEAT_MODE_OFF
+import androidx.media3.common.Player.REPEAT_MODE_ONE
+import androidx.media3.common.Player.RepeatMode
 import com.appsrui.music.R
 import com.appsrui.music.model.Song
 import com.appsrui.music.model.SongList
@@ -55,10 +59,14 @@ fun PlaybackControls(
     currentProgress: Long = 0L,
     bufferedProgress: Long = 0L,
     error: Exception? = null,
+    repeatMode: Int = REPEAT_MODE_OFF,
+    shuffleMode: Boolean = false,
     onSeek: (seconds: Float) -> Unit = {},
     onPlayPause: () -> Unit = {},
     onSkipPrevious: () -> Unit = {},
     onSkipNext: () -> Unit = {},
+    onChangeRepeatMode: () -> Unit = {},
+    onChangeShuffleMode: () -> Unit = {},
 ) {
     Card(
         shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
@@ -88,9 +96,13 @@ fun PlaybackControls(
             )
             TransportControlButtons(
                 isPlaying = isPlaying,
+                repeatMode = repeatMode,
+                shuffleMode = shuffleMode,
                 onPlayPause = onPlayPause,
                 onSkipPrevious = onSkipPrevious,
                 onSkipNext = onSkipNext,
+                onChangeRepeatMode = onChangeRepeatMode,
+                onChangeShuffleMode = onChangeShuffleMode
             )
         }
     }
@@ -170,15 +182,34 @@ private fun PlayerSlider(
 @Composable
 private fun TransportControlButtons(
     isPlaying: Boolean,
+    shuffleMode: Boolean,
+    repeatMode: Int,
     onPlayPause: () -> Unit,
     onSkipPrevious: () -> Unit,
     onSkipNext: () -> Unit,
+    onChangeShuffleMode: () -> Unit,
+    onChangeRepeatMode: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Button(
+            onClick = onChangeRepeatMode,
+            modifier = Modifier.size(32.dp),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            val (repeatModeIconId, repeatModeContentDescription) = when (repeatMode) {
+                REPEAT_MODE_ALL -> R.drawable.icon_repeat to R.string.repeat_mode_action_text
+                REPEAT_MODE_ONE -> R.drawable.icon_repeat_one to R.string.repeat_mode_action_text
+                else -> R.drawable.icon_repeat_off to R.string.repeat_mode_action_text
+            }
+            Icon(
+                painter = painterResource(id = repeatModeIconId),
+                contentDescription = stringResource(id = repeatModeContentDescription)
+            )
+        }
         Button(
             onClick = onSkipPrevious,
             modifier = Modifier.size(48.dp),
@@ -214,6 +245,20 @@ private fun TransportControlButtons(
             Icon(
                 painter = painterResource(id = R.drawable.icon_skip_next),
                 contentDescription = stringResource(id = R.string.skip_next_action_text)
+            )
+        }
+        Button(
+            onClick = onChangeShuffleMode,
+            modifier = Modifier.size(32.dp),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            val (shuffleIconId, shuffleContentDescription) = when (shuffleMode) {
+                true -> R.drawable.icon_shuffle to R.string.shuffle_action_text
+                else -> R.drawable.icon_shuffle_off to R.string.shuffle_action_text
+            }
+            Icon(
+                painter = painterResource(id = shuffleIconId),
+                contentDescription = stringResource(id = shuffleContentDescription)
             )
         }
     }
