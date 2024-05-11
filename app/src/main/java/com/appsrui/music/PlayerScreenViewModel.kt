@@ -1,8 +1,12 @@
 package com.appsrui.music
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
+import android.os.Bundle
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,7 +18,10 @@ import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import com.appsrui.music.model.SongList
+import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,42 +32,57 @@ class PlayerScreenViewModel(app: Application) : AndroidViewModel(app) {
     private val _playerScreenState = MutableStateFlow(PlayerScreenState())
     val playerScreenState: StateFlow<PlayerScreenState> = _playerScreenState
 
+    private lateinit var mediaControllerFuture: ListenableFuture<MediaController>
+    private val mediaController: MediaController?
+        get() = when (mediaControllerFuture.isDone && !mediaControllerFuture.isCancelled) {
+            true -> mediaControllerFuture.get()
+            else -> null
+        }
+
     private fun updatePlayerScreenState(update: PlayerScreenState.() -> PlayerScreenState) {
         _playerScreenState.value = _playerScreenState.value.update()
     }
 
     private var progressUpdateJob: Job? = null
 
-    fun setupPlayer(player: Player) {
-        val mediaItems = SongList.map { song ->
-            val mediaUri = when (song.source.startsWith("http")) {
-                true -> song.source.toUri()
-                else -> {
-                    val context = getApplication<Application>()
-                    val packageName = context.packageName
-                    Uri.Builder()
-                        .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
-                        .authority(packageName)
-                        .appendPath(
-                            context.resources.getIdentifier(song.source, "raw", packageName)
-                                .toString()
-                        )
-                        .build()
+    private fun setupPlayer() {
+        val player = mediaController ?: return
+        if (player.mediaItemCount == 0) {
+            val mediaItems = SongList.map { song ->
+                val mediaUri = when (song.source.startsWith("http")) {
+                    true -> song.source.toUri()
+                    else -> {
+                        val context = getApplication<Application>()
+                        val packageName = context.packageName
+                        Uri.Builder()
+                            .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+                            .authority(packageName)
+                            .appendPath(
+                                context.resources.getIdentifier(song.source, "raw", packageName)
+                                    .toString()
+                            )
+                            .build()
+                    }
                 }
+                MediaItem.Builder()
+                    .setMediaId(song.id.toString())
+                    .setUri(mediaUri)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(song.title)
+                            .setArtist(song.artist)
+                            .setArtworkUri(song.thumb.toUri())
+                            .setExtras(
+                                Bundle().apply {
+                                    this.putInt("id", song.id)
+                                }
+                            )
+                            .build()
+                    )
+                    .build()
             }
-            MediaItem.Builder()
-                .setMediaId(song.id.toString())
-                .setUri(mediaUri)
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(song.title)
-                        .setArtist(song.artist)
-                        .setArtworkUri(song.thumb.toUri())
-                        .build()
-                )
-                .build()
+            player.setMediaItems(mediaItems)
         }
-        player.setMediaItems(mediaItems)
 
         if (player.playbackState == Player.STATE_IDLE) {
             player.prepare()
@@ -128,7 +150,7 @@ class PlayerScreenViewModel(app: Application) : AndroidViewModel(app) {
             override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
                 updatePlayerScreenState {
                     copy(
-                    isShuffleModeActive = shuffleModeEnabled
+                        isShuffleModeActive = shuffleModeEnabled
                     )
                 }
             }
@@ -192,7 +214,14 @@ class PlayerScreenViewModel(app: Application) : AndroidViewModel(app) {
                 },
                 onChangeShuffleMode = {
                     player.shuffleModeEnabled = !player.shuffleModeEnabled
-                }
+                },
+                currentPosition = player.currentPosition,
+                isPlaying = player.isPlaying,
+                isBuffering = player.isLoading,
+                currentSong = SongList.find { it.id.toString() ==  player.currentMediaItem?.mediaId},
+                error = player.playerError,
+                repeatMode = player.repeatMode,
+                isShuffleModeActive = player.shuffleModeEnabled,
             )
         }
     }
@@ -213,13 +242,21 @@ class PlayerScreenViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun onStart(player: Player) {
-        setupPlayer(player)
+    fun onStart() {
+        val context: Context = getApplication()
+        mediaControllerFuture = MediaController.Builder(
+            context,
+            SessionToken(context, ComponentName(context, PlaybackService::class.java))
+        ).buildAsync()
+        mediaControllerFuture.addListener({
+            setupPlayer()
+                                          }, ContextCompat.getMainExecutor(context))
         updatePlayerScreenState {
             copy(playlist = SongList)
         }
     }
 
     fun onStop() {
+        MediaController.releaseFuture(mediaControllerFuture)
     }
 }
