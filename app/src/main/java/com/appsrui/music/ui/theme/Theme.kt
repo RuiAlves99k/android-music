@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.glance.material3.ColorProviders
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -66,5 +67,12 @@ fun MusicTheme(
         colorScheme = colorScheme,
         typography = Typography,
         content = content
+    )
+}
+
+object GlanceColorScheme {
+    val colors = ColorProviders(
+        light = LightColorScheme,
+        dark = DarkColorScheme
     )
 }
