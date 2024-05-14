@@ -1,24 +1,29 @@
 package com.appsrui.music.widget
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Build
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
-import androidx.glance.Button
+import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
+import androidx.glance.action.ActionParameters
+import androidx.glance.action.actionParametersOf
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.CircularProgressIndicator
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
@@ -32,16 +37,19 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
-import androidx.glance.layout.size
 import androidx.glance.text.Text
-import coil.compose.AsyncImage
+import coil.ImageLoader
+import coil.request.ErrorResult
+import coil.request.ImageRequest
+import coil.request.SuccessResult
+import com.appsrui.music.MainActivity
 import com.appsrui.music.R
 import com.appsrui.music.ui.theme.GlanceColorScheme
 
 /**
  * Implementation of App Widget functionality.
  */
-class MusicWidget : GlanceAppWidget() {
+class MusicWidget(private val musicWidgetActions: MusicWidgetActions? = null) : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             GlanceTheme(GlanceColorScheme.colors) {
@@ -54,23 +62,26 @@ class MusicWidget : GlanceAppWidget() {
     private fun MusicContent() {
         val state = MusicWidgetStateHelper.getState(prefs = currentState())
         Box(
-            modifier = GlanceModifier.fillMaxSize()
-                .then(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        GlanceModifier.background(GlanceTheme.colors.tertiaryContainer)
-                            .cornerRadius(6.dp)
-                    } else {
-                        GlanceModifier.background(
-                            ImageProvider(
-                                resId = R.drawable.shape_widget_small
-                            )
+            modifier = GlanceModifier.fillMaxSize().then(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    GlanceModifier.background(GlanceTheme.colors.tertiaryContainer)
+                        .cornerRadius(6.dp)
+                } else {
+                    GlanceModifier.background(
+                        ImageProvider(
+                            resId = R.drawable.shape_widget_small
                         )
-                    }
-                ).appWidgetBackground(),
+                    )
+                }
+            ).appWidgetBackground().clickable(
+                onClick = actionStartActivity(
+                    activity = MainActivity::class.java,
+                )
+            ),
             contentAlignment = Alignment.Center,
         ) {
-            when (state.song.id) {
-                Int.MIN_VALUE -> InitialView()
+            when (state.song?.id) {
+                null, Int.MIN_VALUE -> InitialView()
                 else -> WidgetBody(state)
             }
         }
@@ -84,47 +95,80 @@ class MusicWidget : GlanceAppWidget() {
         ) {
             CircularProgressIndicator()
             Spacer()
-            Text(text = "Loading data...Compose")
+            Text(text = "Loading data...")
         }
     }
 
     @Composable
     fun WidgetBody(state: MusicWidgetState) {
+        val context = LocalContext.current
+        val song = state.song!!
+        val imageUrl = song.thumb
+        var songImage by remember(imageUrl) { mutableStateOf<Bitmap?>(null) }
+        LaunchedEffect(imageUrl) {
+            songImage = getImage(context = context, url = song.thumb)
+        }
         Row(modifier = GlanceModifier.fillMaxSize()) {
-            Column(modifier = GlanceModifier.fillMaxSize()) {
-                AsyncImage(
-                    model = state.song.thumb.takeIf { it.isNotBlank() },
-                    fallback = painterResource(id = R.drawable.icon_music_note),
-                    placeholder = painterResource(id = R.drawable.icon_music_note),
-                    contentDescription = stringResource(id = R.string.now_playing_album_cover_text),
+            if (songImage != null) {
+                Image(
+                    provider = ImageProvider(songImage!!),
+                    contentDescription = LocalContext.current.getString(R.string.now_playing_album_cover_text),
                 )
+            } else {
+                CircularProgressIndicator()
             }
-            Column(modifier = GlanceModifier.fillMaxSize()) {
-                Text(text = state.song.title)
-                Text(text = state.song.artist)
-                Text(text = state.song.durationSeconds.toString())
-                Slider(value = 0F, onValueChange = {})
+            Column(
+                modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.secondary)
+            ) {
+                Text(text = song.title)
+                Text(text = song.artist)
+                Text(text = song.durationSeconds.toString())
+//                Slider(value = 0F, onValueChange = {})
                 Row(modifier = GlanceModifier.fillMaxWidth()) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_skip_previous),
-                        contentDescription = stringResource(
-                            id = R.string.skip_previous_action_text
+                    Image(
+                        modifier = GlanceModifier.clickable(
+                            onClick =
+                            actionRunCallback<MusicWidgetActions>(
+                                actionParametersOf(ActionParameters.Key<String>("action") to MusicWidgetActions.onSkipPreviousKey)
+                            )
+                        ),
+                        provider = ImageProvider(resId = R.drawable.icon_skip_previous),
+                        contentDescription =
+                        LocalContext.current.getString(R.string.skip_previous_action_text)
+                    )
+                    Image(
+                        modifier = GlanceModifier.clickable(
+                            onClick = actionRunCallback<MusicWidgetActions>(
+                                actionParametersOf(ActionParameters.Key<String>("action") to MusicWidgetActions.onPlayPauseKey)
+                            )
+                        ),
+                        provider = ImageProvider(resId = R.drawable.icon_play),
+                        contentDescription = LocalContext.current.getString(
+                            R.string.play_action_text
                         )
                     )
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_play),
-                        contentDescription = stringResource(
-                            id = R.string.play_action_text
-                        )
-                    )
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_skip_previous),
-                        contentDescription = stringResource(
-                            id = R.string.skip_next_action_text
+                    Image(
+                        modifier = GlanceModifier.clickable(
+                            onClick = actionRunCallback<MusicWidgetActions>(
+                                actionParametersOf(ActionParameters.Key<String>("action") to MusicWidgetActions.onSkipNextKey)
+                            )
+                        ),
+                        provider = ImageProvider(resId = R.drawable.icon_skip_previous),
+                        contentDescription = LocalContext.current.getString(
+                            R.string.skip_next_action_text
                         )
                     )
                 }
             }
+        }
+    }
+
+
+    private suspend fun getImage(context: Context, url: String): Bitmap? {
+        val request = ImageRequest.Builder(context).data(url).build()
+        return when (val result = ImageLoader(context).execute(request)) {
+            is ErrorResult -> throw result.throwable
+            is SuccessResult -> result.drawable.toBitmapOrNull()
         }
     }
 }

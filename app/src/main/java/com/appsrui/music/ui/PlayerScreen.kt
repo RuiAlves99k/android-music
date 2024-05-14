@@ -3,6 +3,7 @@ package com.appsrui.music.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -79,18 +80,22 @@ private fun PlayerScreen(
                     end.linkTo(parent.end)
                 }
         )
-        Playlist(
-            playlist = playlist,
-            onSongClick = onSongClick,
-            nowPlaying = nowPlaying?.id.toString(),
-            modifier = Modifier.constrainAs(playlistRef) {
-                height = Dimension.fillToConstraints
-                start.linkTo(parent.start)
-                top.linkTo(header.bottom)
-                end.linkTo(parent.end)
-                bottom.linkTo(controls.top)
-            }
-        )
+        if (playlist.isEmpty() && error == null) {
+            CircularProgressIndicator()
+        } else {
+            Playlist(
+                playlist = playlist,
+                onSongClick = onSongClick,
+                nowPlaying = nowPlaying?.id.toString(),
+                modifier = Modifier.constrainAs(playlistRef) {
+                    height = Dimension.fillToConstraints
+                    start.linkTo(parent.start)
+                    top.linkTo(header.bottom)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(controls.top)
+                }
+            )
+        }
         PlaybackControls(
             song = nowPlaying,
             isPlaying = isPlaying,

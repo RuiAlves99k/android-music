@@ -7,20 +7,23 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.ViewModelProvider
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.lifecycle.lifecycleScope
+import com.appsrui.music.model.Song
 import com.appsrui.music.ui.PlayerScreen
 import com.appsrui.music.ui.theme.MusicTheme
+import com.appsrui.music.widget.MusicWidget
+import com.appsrui.music.widget.MusicWidgetStateHelper
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val model by viewModels<PlayerScreenViewModel> {
-        ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-    }
+    private val viewModel by viewModels<PlayerScreenViewModel>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,36 +34,39 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
-                    val playerScreenState by model.playerScreenState.collectAsState()
+                    val playerScreenState by viewModel.playerScreenState.collectAsState()
                     PlayerScreen(playerScreenState = playerScreenState)
+                    updateWidgetInformation(
+                        playerScreenState.currentSong,
+                        playerScreenState.currentPosition
+                    )
                 }
+            }
+        }
+    }
+
+    private fun updateWidgetInformation(song: Song?, currentPosition: Long?) {
+        if (song == null || currentPosition == null) return
+        val context = baseContext
+        lifecycleScope.launch {
+            val glanceId = GlanceAppWidgetManager(context).getGlanceIds(MusicWidget::class.java)
+                .last()
+            MusicWidget().apply {
+                updateAppWidgetState(context = context, glanceId = glanceId) { prefs ->
+                    MusicWidgetStateHelper.save(prefs, song, currentPosition)
+                }
+                update(context, glanceId)
             }
         }
     }
 
     override fun onStart() {
         super.onStart()
-        model.onStart()
+        viewModel.onStart()
     }
 
     override fun onStop() {
         super.onStop()
-        model.onStop()
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MusicTheme {
-        Greeting("Android")
+        viewModel.onStop()
     }
 }
