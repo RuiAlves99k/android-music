@@ -49,7 +49,7 @@ import com.appsrui.music.ui.theme.GlanceColorScheme
 /**
  * Implementation of App Widget functionality.
  */
-class MusicWidget(private val musicWidgetActions: MusicWidgetActions? = null) : GlanceAppWidget() {
+class MusicWidget() : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             GlanceTheme(GlanceColorScheme.colors) {

@@ -36,10 +36,10 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val playerScreenState by viewModel.playerScreenState.collectAsState()
                     PlayerScreen(playerScreenState = playerScreenState)
-                    updateWidgetInformation(
-                        playerScreenState.currentSong,
-                        playerScreenState.currentPosition
-                    )
+//                    updateWidgetInformation(
+//                        playerScreenState.currentSong,
+//                        playerScreenState.currentPosition
+//                    )
                 }
             }
         }
