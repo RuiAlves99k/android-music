@@ -32,8 +32,9 @@ go [here](https://github.com/RuiAlves99k/android-music/tree/main/apks) and downl
 
 Music app has only one screen where the user has a playlist.
 
-![MainScreen](<img src="https://github.com/RuiAlves99k/android-music/blob/main/screenshots/main_screen.png" width="300">screenshots/main_screen.png)
-![MainScreen](screenshots/main_screen_play_music.png)
+![MainScreen](<img src="https://github.com/RuiAlves99k/android-music/blob/main/screenshots/main_screen.png" width="300">)
+![MainScreen_Audio](<img src="https://github.com/RuiAlves99k/android-music/blob/main/screenshots/main_screen_play_music.png" width="300">)
+![Notification](<img src="https://github.com/RuiAlves99k/android-music/blob/main/screenshots/screen_shot.png" width="300">)
 
 ## Future Features
 
