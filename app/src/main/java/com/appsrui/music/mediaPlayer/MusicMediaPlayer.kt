@@ -1,10 +1,12 @@
 package com.appsrui.music.mediaPlayer
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -14,8 +16,11 @@ import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import com.appsrui.music.model.Song
+import com.appsrui.music.service.PlaybackService
+import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,14 +30,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
-class MusicMediaPlayer(private val app: Application, private val mediaController: ExoPlayer) : MediaPlayer {
+class MusicMediaPlayer(private val app: Application) :
+    MediaPlayer {
 
-//    private lateinit var mediaControllerFuture: ListenableFuture<MediaController>
-//    private val mediaController: MediaController?
-//        get() = when (this::mediaControllerFuture.isInitialized && mediaControllerFuture.isDone && !mediaControllerFuture.isCancelled) {
-//            true -> mediaControllerFuture.get()
-//            else -> null
-//        }
+    private lateinit var mediaControllerFuture: ListenableFuture<MediaController>
+    private val mediaController: MediaController?
+        get() = when (this::mediaControllerFuture.isInitialized && mediaControllerFuture.isDone && !mediaControllerFuture.isCancelled) {
+            true -> mediaControllerFuture.get()
+            else -> null
+        }
 
     private val _mediaPlayerState = MutableStateFlow(MediaPlayerState())
     private fun updateMediaPlayerState(update: MediaPlayerState.() -> MediaPlayerState) {
@@ -235,17 +241,17 @@ class MusicMediaPlayer(private val app: Application, private val mediaController
         this.onSetup = onSetup
         val context: Context = app
         setupPlayer()
-//        mediaControllerFuture = MediaController.Builder(
-//            context,
-//            SessionToken(context, ComponentName(context, PlaybackService::class.java))
-//        ).buildAsync()
-//        mediaControllerFuture.addListener({
-//            setupPlayer()
-//        }, ContextCompat.getMainExecutor(context))
+        mediaControllerFuture = MediaController.Builder(
+            context,
+            SessionToken(context, ComponentName(context, PlaybackService::class.java))
+        ).buildAsync()
+        mediaControllerFuture.addListener({
+            setupPlayer()
+        }, ContextCompat.getMainExecutor(context))
     }
 
     override fun onStop() {
-//        MediaController.releaseFuture(mediaControllerFuture)
+        MediaController.releaseFuture(mediaControllerFuture)
         progressUpdateJob?.cancel()
     }
 

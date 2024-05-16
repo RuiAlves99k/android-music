@@ -17,13 +17,11 @@ import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
-import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionParametersOf
+import androidx.glance.action.action
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.CircularProgressIndicator
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
@@ -44,12 +42,18 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.appsrui.music.MainActivity
 import com.appsrui.music.R
+import com.appsrui.music.mediaPlayer.MediaPlayer
 import com.appsrui.music.ui.theme.GlanceColorScheme
+import javax.inject.Inject
 
 /**
  * Implementation of App Widget functionality.
  */
 class MusicWidget() : GlanceAppWidget() {
+
+    @Inject
+    lateinit var mediaPlayer: MediaPlayer
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             GlanceTheme(GlanceColorScheme.colors) {
@@ -127,10 +131,9 @@ class MusicWidget() : GlanceAppWidget() {
                 Row(modifier = GlanceModifier.fillMaxWidth()) {
                     Image(
                         modifier = GlanceModifier.clickable(
-                            onClick =
-                            actionRunCallback<MusicWidgetActions>(
-                                actionParametersOf(ActionParameters.Key<String>("action") to MusicWidgetActions.onSkipPreviousKey)
-                            )
+                            onClick = action {
+                                mediaPlayer.onSkipPrevious()
+                            }
                         ),
                         provider = ImageProvider(resId = R.drawable.icon_skip_previous),
                         contentDescription =
@@ -138,9 +141,9 @@ class MusicWidget() : GlanceAppWidget() {
                     )
                     Image(
                         modifier = GlanceModifier.clickable(
-                            onClick = actionRunCallback<MusicWidgetActions>(
-                                actionParametersOf(ActionParameters.Key<String>("action") to MusicWidgetActions.onPlayPauseKey)
-                            )
+                            onClick = action {
+                                mediaPlayer.onPlayPause()
+                            }
                         ),
                         provider = ImageProvider(resId = R.drawable.icon_play),
                         contentDescription = LocalContext.current.getString(
@@ -149,9 +152,9 @@ class MusicWidget() : GlanceAppWidget() {
                     )
                     Image(
                         modifier = GlanceModifier.clickable(
-                            onClick = actionRunCallback<MusicWidgetActions>(
-                                actionParametersOf(ActionParameters.Key<String>("action") to MusicWidgetActions.onSkipNextKey)
-                            )
+                            onClick = action {
+                                mediaPlayer.onSkipNext()
+                            }
                         ),
                         provider = ImageProvider(resId = R.drawable.icon_skip_previous),
                         contentDescription = LocalContext.current.getString(
@@ -162,7 +165,6 @@ class MusicWidget() : GlanceAppWidget() {
             }
         }
     }
-
 
     private suspend fun getImage(context: Context, url: String): Bitmap? {
         val request = ImageRequest.Builder(context).data(url).build()

@@ -25,14 +25,15 @@ This android app has at its core the functionality of enabling the user to liste
 ## Setup
 
 There are no steps required to run the project.
-If you only want to have a try at the app you can go [here](https://github.com/RuiAlves99k/android-music/tree/main/apks)and download the apk.
+If you only want to have a try at the app you can
+go [here](https://github.com/RuiAlves99k/android-music/tree/main/apks) and download the apk.
 
 ## Current Features
 
 Music app has only one screen where the user has a playlist.
 
-![MainScreen](screenshots/main_screen.png){ height: 200px; }
-![MainScreen](screenshots/main_screen_play_music.png){ height: 200px; }
+![MainScreen](<img src="https://github.com/RuiAlves99k/android-music/blob/main/screenshots/main_screen.png" width="300">screenshots/main_screen.png)
+![MainScreen](screenshots/main_screen_play_music.png)
 
 ## Future Features
 
